@@ -154,7 +154,8 @@ impl Track {
         for i in 1..points.len() {
             let (a, b) = (points[i - 1], points[i]);
             let p_scale = projection_scale(0.5 * (a.lat + b.lat));
-            let len = (b.x - a.x).hypot(b.y - a.y) * p_scale;
+            let (dx, dy) = (b.x - a.x, b.y - a.y);
+            let len = (dx * dx + dy * dy).sqrt() * p_scale;
             t.projection_scale += p_scale;
             t.total_len += len;
             let mut dur = (b.timestamp - a.timestamp) as f64;

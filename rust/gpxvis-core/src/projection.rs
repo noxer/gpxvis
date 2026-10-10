@@ -7,9 +7,12 @@ const MERCATOR_SCALE_X: f64 = 40075.0167;
 /// Meridian length according to the WGS84 flattening factor.
 const MERCATOR_SCALE_Y: f64 = 39940.65274158;
 
+// The expressions below deliberately mirror the C++ operation order (instead of
+// using `to_radians()` etc.) so results are bit-identical to the original.
+
 pub fn project_mercator(lon: f64, lat: f64) -> (f64, f64) {
-    let lon = lon.to_radians();
-    let lat = lat.to_radians();
+    let lon = lon * PI / 180.0;
+    let lat = lat * PI / 180.0;
     let x = (MERCATOR_SCALE_X * (lon + PI)) / (2.0 * PI);
     let y = (MERCATOR_SCALE_Y * (PI + (FRAC_PI_4 + lat * 0.5).tan().ln())) / (2.0 * PI);
     (x, y)
@@ -18,12 +21,12 @@ pub fn project_mercator(lon: f64, lat: f64) -> (f64, f64) {
 pub fn unproject_mercator(x: f64, y: f64) -> (f64, f64) {
     let lon = ((x * 2.0 * PI) / MERCATOR_SCALE_X) - PI;
     let lat = 2.0 * ((((y * 2.0 * PI) / MERCATOR_SCALE_Y) - PI).exp().atan() - FRAC_PI_4);
-    (lon.to_degrees(), lat.to_degrees())
+    (lon * 180.0 / PI, lat * 180.0 / PI)
 }
 
 /// Scale factor of the projection at the given latitude.
 pub fn projection_scale(lat: f64) -> f64 {
-    lat.clamp(-89.9, 89.9).to_radians().cos()
+    (lat.clamp(-89.9, 89.9) * PI / 180.0).cos()
 }
 
 #[cfg(test)]

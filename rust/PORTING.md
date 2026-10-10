@@ -35,8 +35,16 @@ These are in the current code. A port fixes most of them for free.
   elements (`<gpx:trkpt>`) and on self‑closing `<trkpt …/>`, which swallow
   the following point. It also picks up `<trkpt>` elements inside comments.
 * **Timestamps**: GPX times are UTC (`...Z`), but `getTime` passes them to
-  `mktime`, which treats them as local time. Durations are off by an hour
-  across DST changes, and day/week accumulation is shifted in some time zones.
+  `mktime`, which reads them as local *standard* time (`tm_isdst = 0`), and
+  any `+hh:mm` offset is ignored. Durations stay correct (the shift is
+  constant, even across DST switches, as the comparison in
+  [`compare/`](./compare) confirmed), but absolute times are off by the zone
+  offset. Dates shown and day/week buckets are therefore effectively UTC
+  dates, which differ from local dates for tracks recorded near midnight.
+* **`CAABB::Add`** (`util.cpp`) compares z against `aabb[5]` in both
+  branches: the minimum elevation stays the first point's value and the
+  maximum becomes the last point's. Harmless today, because only x/y are
+  used for rendering.
 * **`img.cpp`**: `CImg::Write` returns `true` even when stb fails.
 * **`filedialog.cpp`**: `realpath` into a fixed `PATH_MAX` buffer, and the
   return value is ignored.
@@ -176,3 +184,9 @@ port is cleaner than living with a mixed build.
 Tests: `cargo test` passes 6 tests covering parsing, projection round trip,
 animation position lookups, point‑to‑track distance and pause detection.
 `cargo clippy --all-targets` is clean.
+
+Comparison with the C++ code: [`compare/`](./compare) runs both
+implementations on 11 synthetic GPX files. On well‑formed input the Rust
+results are **bit‑identical** to the C++ ones (every point, length, duration,
+lookup, distance and pause statistic). All remaining differences come from
+known C++ bugs listed in section 1.
